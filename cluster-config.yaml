@@ -1,0 +1,51 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: "platformwale"
+# configure cluster with containerd registry config dir enabled
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry]
+    config_path = "/etc/containerd/certs.d"
+nodes:
+# control plane node
+# this comes with taint so that control-plane node will not accept any other pods by default
+- role: control-plane
+  image: "kindest/node:v1.27.3"
+
+# worker nodes
+
+# worker with no node labels, so pods with no nodeSelectors will schedule here
+- role: worker
+  image: "kindest/node:v1.27.3"
+
+# worker with node label role=app
+# pods with nodeSelectors role=app will schedule here
+- role: worker
+  image: "kindest/node:v1.27.3"
+  labels:
+    role: app
+
+# worker with node label role=ingress
+# pods with nodeSelectors role=ingress and toleration to taint role=ingress:NoSchedule will schedule here
+- role: worker
+  image: "kindest/node:v1.27.3"
+  labels:
+    role: ingress
+  # extraPortMappings allow the localhost to make requests to the Ingress controller over ports 80/443
+  extraPortMappings:
+  - containerPort: 80
+    hostPort: 80
+    protocol: TCP
+  - containerPort: 443
+    hostPort: 443
+    protocol: TCP
+  - containerPort: 5678
+    hostPort: 5678
+    protocol: TCP
+  # add taint to the node such that only pods tolerating the taint will be scheduled on this node
+  kubeadmConfigPatches:
+  - |
+    kind: JoinConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        register-with-taints: "role=ingress:NoSchedule"
