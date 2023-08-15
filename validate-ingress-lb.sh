@@ -43,19 +43,6 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: foo-service-lb
-spec:
-  type: LoadBalancer
-  selector:
-    name: foo-app
-    app: http-echo
-  ports:
-  # Default port used by the image
-  - port: 5678
----
-kind: Service
-apiVersion: v1
-metadata:
   name: foo-service
 spec:
   selector:
@@ -99,6 +86,32 @@ spec:
             name: bar-service
             port:
               number: 5678
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: foo-service-lb
+spec:
+  type: LoadBalancer
+  selector:
+    name: foo-app
+    app: http-echo
+  ports:
+  # Default port used by the image
+  - port: 5678
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: bar-service-lb
+spec:
+  type: LoadBalancer
+  selector:
+    name: bar-app
+    app: http-echo
+  ports:
+  # Default port used by the image
+  - port: 5678
 EOF
 
 # wait for the controllers to take effect
@@ -116,9 +129,15 @@ curl localhost/bar/hostname
 
 # validate load balancer service
 echo "validating loadbalancer, note on macOS and Windows, docker does not expose the docker network to the host. Because of this limitation, containers (including kind nodes) are only reachable from the host via port-forwards, however other containers/pods can reach other things running in docker including loadbalancers"
-LB_IP=$(kubectl get svc/foo-service-lb -n default -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+FOO_LB_IP=$(kubectl get svc/foo-service-lb -n default -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+echo "FOO_LB_IP: ${FOO_LB_IP}"
+
+BAR_LB_IP=$(kubectl get svc/bar-service-lb -n default -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+echo "BAR_LB_IP: ${BAR_LB_IP}"
 
 # should output foo and bar on separate lines 
 for _ in {1..10}; do
-  curl ${LB_IP}:5678
+  curl ${FOO_LB_IP}:5678
+  curl ${BAR_LB_IP}:5678
 done

@@ -185,7 +185,7 @@ l2advertisement.metallb.io/empty created
 ```
 
 Validate the `Ingress` object using `ClusterIP` services as well as validate `LoadBalancer` type service using the script below.
-The script below will deploy pods and setup `Ingress` object to divert the traffic to the pods based on `path` configured. This will also install `MetalLB` loadbalancer. 
+The script below will deploy pods and setup `Ingress` object to divert the traffic to the pods based on `path` configured.
 
 NOTE: on On macOS and Windows, docker does not expose the docker network to the host. Because of this limitation, containers (including kind nodes) are only reachable from the host via port-forwards, however other containers/pods can reach other things running in docker including loadbalancers.
 
@@ -235,3 +235,4 @@ You can cleanup the `kind` cluster as well as `registry` using the script below.
 - [kind resources](https://kind.sigs.k8s.io/docs/user/resources/)
 - All the scripts and yamls are uploaded in this [github repository](https://github.com/piyushjajoo/kind-with-local-registry-and-ingress)
 - [MetalLB docs](https://metallb.universe.tf/installation/)
+- [Kind and MetalLB on mac](https://www.thehumblelab.com/kind-and-metallb-on-mac/)
