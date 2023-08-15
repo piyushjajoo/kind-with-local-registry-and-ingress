@@ -48,7 +48,7 @@ platformwale-worker2         Ready    <none>          9m1s    v1.27.3
 platformwale-worker3         Ready    <none>          8m56s   v1.27.3
 ```
 
-Please read this [configuration](https://kind.sigs.k8s.io/docs/user/configuration/)documentation to learn more options to configure the KIND cluster.
+Please read this [configuration](https://kind.sigs.k8s.io/docs/user/configuration/) documentation to learn more options to configure the KIND cluster.
 
 ### create the local registry and configure the cluster with the registry config
 
@@ -216,7 +216,32 @@ validating foo-app via Ingress object
 foo
 validating bar-app via Ingress object
 bar
-validating loadbalancer, note on macOS and Windows, docker does not expose the docker network to the host. Because of this limitation, containers (including kind nodes) are only reachable from the host via port-forwards, however other containers/pods can reach other things running in docker including loadbalancers.
+validating loadbalancer, note on macOS and Windows, docker does not expose the docker network to the host. Because of this limitation, containers (including kind nodes) are only reachable from the host via port-forwards, however other containers/pods can reach other things running in docker including loadbalancers
+FOO_LB_IP: 172.18.255.200
+BAR_LB_IP: 172.18.255.201
+
+# you will see this output for loadbalancer service on mac or windows
+curl: (28) Failed to connect to 172.18.255.200 port 5678 after 75010 ms: Couldn't connect to server
+```
+
+On Mac or Windows the `LoadBalancer` sevice will timeout as explained earlier, to validate that see below -
+
+```
+## on Mac or Windows port-forward and hit the service as below
+
+# validate foo-service-lb
+kubectl port-forward -n default svc/foo-service-lb 5678:5678
+
+# in browser hit localhost:5678 or do curl as below, you will see foo as output
+$ curl localhost:5678
+foo
+
+# validate bar-service-lb
+kubectl port-forward -n default svc/bar-service-lb 5678:5678
+
+# in browser hit localhost:5678 or do curl as below, you will see bar as output
+$ curl localhost:5678
+bar
 ```
 
 Please see this [documentation](https://www.thehumblelab.com/kind-and-metallb-on-mac/) on how to make `kind` and `metallb` work on mac.
@@ -229,6 +254,17 @@ You can cleanup the `kind` cluster as well as `registry` using the script below.
 ./destroy.sh
 ```
 
+This will output something like below -
+
+```
+$ ./destroy.sh
+deleting kind cluster
+Deleting cluster "platformwale" ...
+Deleted nodes: ["platformwale-worker3" "platformwale-control-plane" "platformwale-worker" "platformwale-worker2"]
+deleting registry
+bd54f01013a9
+```
+
 ## Resources
 
 - [kind documentation](https://kind.sigs.k8s.io/)
@@ -236,3 +272,38 @@ You can cleanup the `kind` cluster as well as `registry` using the script below.
 - All the scripts and yamls are uploaded in this [github repository](https://github.com/piyushjajoo/kind-with-local-registry-and-ingress)
 - [MetalLB docs](https://metallb.universe.tf/installation/)
 - [Kind and MetalLB on mac](https://www.thehumblelab.com/kind-and-metallb-on-mac/)
+
+## Troubleshooting
+
+1. If you see something like below while executing `./configure-loadbalancer.sh` script, just re-run the script.
+
+```
+$ ./configure-loadbalancer.sh
+waiting for nginx pods to be ready
+error: timed out waiting for the condition on pods/ingress-nginx-controller-57d7c6cb58-jfrgz
+```
+
+2. While validating `LoadBalancer` service nn Mac or Windows the you will timeout error due to reason explained earlier, to validate that see below -
+
+```
+# you will see this output for loadbalancer service on mac or windows
+curl: (28) Failed to connect to 172.18.255.200 port 5678 after 75010 ms: Couldn't connect to server
+```
+
+```
+## on Mac or Windows port-forward and hit the service as below
+
+# validate foo-service-lb
+kubectl port-forward -n default svc/foo-service-lb 5678:5678
+
+# in browser hit localhost:5678 or do curl as below, you will see foo as output
+$ curl localhost:5678
+foo
+
+# validate bar-service-lb
+kubectl port-forward -n default svc/bar-service-lb 5678:5678
+
+# in browser hit localhost:5678 or do curl as below, you will see bar as output
+$ curl localhost:5678
+bar
+```
